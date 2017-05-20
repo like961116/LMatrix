@@ -1,91 +1,185 @@
 #ifndef __LEC_MATRIX_H__
 #define __LEC_MATRIX_H__
 
-class LMatrix 
+#include "LMatrixStorage.h"
+
+class LMatrix : public LMatrixStorage
 {
-
-//==================================================================================================================================	
-//	属性
+private:	
+	long double m_fZero;	//
+public:
+	inline void SetZero(long double f)	{ m_fZero=f; }
+	inline long double GetZero()		{ return m_fZero; }
+	bool IsZero(long double f) { return f<=m_fZero&&f>=0-m_fZero; }
 //==================================================================================================================================
-private:
-	long double * m_pBuf;	//保存矩阵数据
-	int m_nRow;					//矩阵的行数
-	int m_nCol;					//矩阵的列数
-	long double m_fZero;	//零值，矩阵运算中，绝对值小于该值的数字认为是0，一般默认为0
-
-//==================================================================================================================================
-//	构造函数、析构函数
+//	Constructor / Destructor
 //==================================================================================================================================
 public:
-	LMatrix();											//初始化为0行0列的矩阵
-	LMatrix(int row,int col);					//初始化为row行col列的矩阵，数据全为0
-	LMatrix(LMatrix& m);						//初始化为与m完全相等的矩阵
-	LMatrix& operator =(LMatrix& m);	//初始化为与m完全相等的矩阵
+	LMatrix();
+	LMatrix(int row,int col);
+	LMatrix(LMatrix& m);
+	LMatrix(LMatrixStorage& m);
 
-	~LMatrix();							//析构函数
-	LMatrix I(int r);						//创建一个r行r列的单位阵
+	//	=======================
+	//	Name	:	I
+	//	Func	:	Create an identity matrix. Is different with base class "LMatrixStorage" in that LMatrix::I call SetZero()
+	LMatrix I(int row);
+
+//==================================================================================================================================
+//	Operator Overload
+//==================================================================================================================================
+public:
+	//	=======================
+	//	Name	:	operator ==
+	//	Func	:	Determine whether the two matrices are equal
+	//	return	:	true(1) means equal, false(0) means different
+	//	note	:	1)	two empty matrices with different sizes are different. 
+	//					for example, m1(0,1) is not equal to m2(0,0)
+	//				2)	because lower bound of row and col num is 0
+	//					so m1(-1,-1) is equal to m2(-2,-3)
+	bool operator==(LMatrix& m);
+
+	bool operator!=(LMatrix& m);
+	LMatrix& operator =(LMatrix& m);
+	LMatrix& operator =(LMatrixStorage& m);
+
+
+
+	//	======================
+	//	Name	:	operator +=
+	//	Func		:	add another matrix to this one
+	//	m			:	another matrix
+	//	return	:	reference of this matrix
+	//	note		:	if two matrices have different sizes, the return value is matrix with 0 row and 0 col
+	LMatrix& operator +=(LMatrix& m);	
+
+	//	======================
+	//	Name	:	operator -=
+	//	Func		:	subtract  another matrix from this one
+	//	m			:	another matrix
+	//	return	:	reference of this matrix
+	//	note		:	if two matrices have different sizes, the return value is matrix with 0 row and 0 col
+	LMatrix& operator -=(LMatrix& m);	
+
+	//	======================
+	//	Name	:	operator *=
+    //	Func		:	multiplied by another matrix
+	//	m			:	another matrix
+	//	return	:	reference of this matrix
+	//	note		:	if two matrices are not satisfy the condition of matrix multiply, then return matrix with 0 row and 0 col
+	LMatrix& operator *=(LMatrix& m);	
+
+	//	======================
+	//	Name	:	operator /=
+	//	Func	:	multiplied by the inverse of another matrix
+	//	m		:	another matrix
+	//	return	:	reference of this matrix
+	//	note	:	if m is not inversable, or two matrices are not satisfy the condition of matrix multiply, then return matrix with 0 row and 0 col	
+	LMatrix& operator /=(LMatrix& m);	
+
+	//	======================
+	//	Name	:	operator *=
+	//	Func		:	multiply the matrix with a number
+	//	f			:	multiplier
+	//	return	:	reference of this matrix
+	LMatrix& operator *=(long double f);
+
+	//	======================
+	//	Name	:	operator /=
+	//	Func		:	divide the matrix with a number
+	//	f			:	divisor
+	//	return	:	reference of this matrix
+	//	note		:	if f equal 0, return matrix with 0 row and 0 col
+	LMatrix& operator /=(long double f);
+
+	//	======================
+	//	Name	:	operator ^=
+	//	Func		:	power of the matrix
+	//	f			:	exponent
+	//	return	:	reference of this matrix
+	//	note		:	if f < 0, means power of inverse matrix
+	LMatrix& operator ^=(int f);
+
+	//	======================
+	//	Name	:	operator +
+	//	Func		:	sum of two matrices, return a new matrix
+	//	m			:	another matrix
+	//	return	:	new matrix represent sum of two matrices
+	//	note		:	if two matrices have different sizes, the return value is matrix with 0 row and 0 col
+	LMatrix operator +(LMatrix& m);		
+
+	//	======================
+	//	Name	:	operator -
+	//	Func		:	difference of two matrices, return a new matrix
+	//	m			:	another matrix
+	//	return	:	new matrix represent difference of two matrices
+	//	note		:	if two matrices have different sizes, the return value is matrix with 0 row and 0 col
+	LMatrix operator -(LMatrix& m);		
+
+	//	======================
+	//	Name	:	operator *
+	//	Func		:	product of two matrices, return a new matrix
+	//	m			:	another matrix
+	//	return	:	new matrix represent product of two matrices
+	//	note		:	if two matrices are not satisfy the condition of matrix multiply, then return matrix with 0 row and 0 col
+	LMatrix operator *(LMatrix& m);		
+
+
+	//	======================
+	//	Name	:	operator /
+	//	Func		:	product one matrix with inverse of another, return a new matrix
+	//	m			:	another matrix
+	//	return	:	new matrix represent product of two matrices
+	//	note		:	if m is not inversable, or two matrices are not satisfy the condition of matrix multiply, then return matrix with 0 row and 0 col
+	LMatrix operator /(LMatrix& m);		
 	
-//==================================================================================================================================
-//	属性操作
-//==================================================================================================================================
-public:
-	int GetRow();	//读取行数
-	int GetCol();	//读取列数
-	long double GetValue(int row,int col);	//读取row行col列处的元素值
-	long double GetZero();					//读取矩阵的零值
-	long double * GetBuf();					//返回缓冲区首地址
-	long double * GetRowAddr(int row);		//返回第row行的首地址
-
-	void SetRow(int row);	//设置行数，行数增加时，新增数据默认为0
-	void SetCol(int col);	//设置列数，列数增加时，新增数据默认为0
-	void SetValue(int row,int col,long double v);	//设置row行col列处的元素值
-	void SetZero(long double z);					//设置零值
-
-//==================================================================================================================================
-//	行列操作
-//==================================================================================================================================
-public:
-	int DelRows(int nStartRow,int nRows);	//从nStartRow行开始，共删除nRows行
-	int DelCols(int nStartCol,int nCols);	//从nStartCol列开始，共删除nCols列
-
-	int DelRow(int nRow);	//删除第nRow行
-	int DelCol(int nCol);	//删除第nCol列
-
-	LMatrix& InsertRows(LMatrix& m,int nPos);	//在第nPos行之前插入矩阵m，nPos之后的行下移
-	LMatrix& InsertCols(LMatrix& m,int nPos);	//在第nPos列之前插入矩阵m，nPos之后的列右移
 	
-	LMatrix Sub(int sr,int sc,int er,int ec);	//取矩阵的sr至er行，sc至ec列的子阵
-	LMatrix Rows(int nStartRow,int nRows);		//取矩阵的nStartRow行开始的nRows行
-	LMatrix Cols(int nStartCol,int nCols);		//取矩阵的nStartCol列开始的nCols列
-	LMatrix Row(int row);	//取矩阵的第row行
-	LMatrix Col(int col);	//取矩阵的第col列
+	//	======================
+	//	Name	:	operator *
+	//	Func		:	product one matrix with a number, return a new matrix
+	//	f			:	multiplier
+	//	return	:	a new matrix represent the product 
+	LMatrix operator *(long double f);		//矩阵乘以数值
+
+	//	======================
+	//	Name	:	operator /
+	//	Func		:	devide one matrix with a number, return a new matrix
+	//	f			:	divisor
+	//	return	:	new matrix represent the quotient
+	LMatrix operator /(long double f);	
+
+	//	======================
+	//	Name	:	operator ^
+	//	Func		:	power of the matrix, return a new matrix
+	//	i			:	exponent, negative number means power of inverse matrix
+	//	return	:	new matrix
+	LMatrix operator ^(int i);
+	
+	
 
 //==================================================================================================================================
-//	运算符重载
+//	Matrix Operation
 //==================================================================================================================================
 public:
-	LMatrix operator +(LMatrix &m);		
-	LMatrix operator -(LMatrix &m);
-	LMatrix operator *(LMatrix &m);
-	LMatrix operator +(long double f);	
-	LMatrix operator -(long double f);
-	LMatrix operator *(long double f);
-	LMatrix operator /(long double f);
-	long double& operator ()(int row,int col);
-	long double operator ()(int row,int col) const;
+	//	======================
+	//	Name	:	Trans
+	//	Func		:	transposition of matrix
+	//	return	:	a new matrix  
+	LMatrix Trans();
+
+	//	======================
+	//	Name	:	Deter
+	//	Func		:	determinant of matrix
+	//	return	:	determinant of matrix
+	long double Deter();	 	
+
 	
-//==================================================================================================================================
-//	矩阵运算
-//==================================================================================================================================
-public:
-	int Inv();			//逆矩阵，返回1表示可逆，返回0表示不可逆
-	int Trans();		//转置
-	long double Det();	//行列式
 	LMatrix Cholesky();	//得到Cholesky分解的下三角矩阵T，一般协方差矩阵C可以分解为TT'
 	
 
-	bool IsPDefinite();		//判断矩阵是否是正定矩阵
-	bool IsHPDefinite();	//判断矩阵是否是半正定矩阵
+/*
+	bool IsPositiveDefinite();			//判断矩阵是否是正定矩阵
+	bool IsHalfPositiveDefinite();		//判断矩阵是否是半正定矩阵
 //	bool IsNDefinite();	//判断矩阵是否是负定矩阵
 //	bool IsHNDefinite();	//判断矩阵是否是半负定矩阵
 
@@ -131,19 +225,8 @@ public:
 	
 private:
 	LMatrix& Sort_step(int direction,int col,int startrow,int endrow);
-	LMatrix& SortIndex_step(int direction,int col,int startrow,int endrow,LMatrix &si);
-
-
-//==================================================================================================================================
-//	调试功能
-//==================================================================================================================================
-public:
-	void Output(char * szFileName,int nLen);	//将矩阵的各个元素输出到文件szFileName中
-	void Load(char * szFileName);					//从szFileName中读取矩阵的各个元素
-
-public:
-	
-
+	LMatrix& SortIndex_step(int direction,int col,int startrow,int endrow,LMatrix &si);	
+	*/
 };
 
 #endif 

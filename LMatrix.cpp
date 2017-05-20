@@ -2,595 +2,390 @@
 #include "LMatrix.h"
 #include <math.h>
 
-//==================================================================================================================================
-//
-//	构造函数、析构函数
-//
-//==================================================================================================================================
 
-LMatrix::LMatrix()
+LMatrix::LMatrix() { m_nBase=1;m_fZero=0.0; }
+LMatrix::LMatrix(int row,int col) : LMatrixStorage(row,col) { m_nBase=1;m_fZero=0.0;  }
+LMatrix::LMatrix(LMatrix& m) : LMatrixStorage(m) { m_nBase=1;m_fZero=m.m_fZero; }
+LMatrix::LMatrix(LMatrixStorage& m) : LMatrixStorage(m) { m_nBase=1;m_fZero=0.0; }
+LMatrix& LMatrix::operator=(LMatrix& m) 
 {
-	m_nRow = m_nCol = 0;
-	m_pBuf = NULL;
-	m_fZero = 0;
-}
-
-LMatrix::LMatrix(int row,int col) 
-{
-	m_fZero = 0;
-	
-	//行列数不能小于0
-	row=row<0?0:row;
-	col=col<0?0:col;
-
-	m_nRow = row;
-	m_nCol = col; 
-
-	//分配存储空间
-	if (row*col!=0) 
-	{
-		m_pBuf = (long double*)malloc(row*col*sizeof(long double));
-		memset(m_pBuf,0,m_nRow*m_nCol*sizeof(long double));
-	}
-}
-
-LMatrix::LMatrix(LMatrix& m)
-{
-	m_nRow = m.GetRow();
-	m_nCol = m.GetCol();
-	m_fZero= m.GetZero();
-
-	int nBufSize = m_nRow*m_nCol*sizeof(long double);
-	m_pBuf = (long double*)malloc(nBufSize);
-	memmove(m_pBuf,m.GetBuf(),nBufSize);
-}
-
-LMatrix& LMatrix::operator =(LMatrix& m)
-{
-	m_nRow = m.GetRow();
-	m_nCol = m.GetCol();
-	m_fZero= m.GetZero();
-
-	int nBufSize = m_nRow*m_nCol*sizeof(long double);
-	m_pBuf = (long double*)malloc(nBufSize);
-	memmove(m_pBuf,m.GetBuf(),nBufSize);
-	
+	if(this==&m) return *this;
+	LMatrixStorage::operator=(m);
+	m_fZero=m.m_fZero;
 	return *this;
 }
 
-LMatrix::~LMatrix()
+
+LMatrix& LMatrix::operator=(LMatrixStorage& m) 
 {
-	if (m_pBuf!=NULL) 
-	{ 
-		free(m_pBuf); 
-		m_pBuf=NULL; 
-	}
+	if(this==&m) return *this;
+	LMatrixStorage::operator=(m);
+	return *this;
 }
 
-LMatrix LMatrix::I(int r)
+LMatrix LMatrix::I(int row)
 {
-	LMatrix m(r,r);
-	memset(m.GetBuf(),0,r*r*sizeof(long double));
-	for (int i=1;i<=m.GetRow();i++)
-	{
-		m(i,i)=1;
-	}
+	LMatrix m(row,row);
+	for(int i=1;i<=row;i++) m(i,i)=1;
+	m.SetZero(GetZero());
 	return m;
 }
 
-
-//==================================================================================================================================
-//
-//	属性操作
-//
-//==================================================================================================================================
-int LMatrix::GetRow() { return m_nRow; }
-int LMatrix::GetCol() { return m_nCol; }
-long double LMatrix::GetValue(int row,int col) 
-{ 
-	return m_pBuf[(row-1)*m_nCol+col-1]; 
-}
-long double LMatrix::GetZero()  { return m_fZero; }
-long double * LMatrix::GetBuf() { return m_pBuf; }
-long double * LMatrix::GetRowAddr(int row)
+bool LMatrix::operator==(LMatrix& m)
 {
-	if(row>m_nRow||row<=0) return NULL;
-
-	return m_pBuf+(row-1)*m_nCol;
-}
-//	=========================
-//	函数名称	:	SetRow
-//	函数功能	:	设置矩阵的行数
-//	row			:	矩阵的新行数
-//	注			:	新增元素初始化为0
-void LMatrix::SetRow(int row) 
-{ 
-	if(row<0) return;
-
-	if(row>m_nRow)	//扩展矩阵，由于m_nRow>=0，又row>m_nRow，所以row>0
-	{
-		int nMemLen = m_pBuf==NULL?0:_msize(m_pBuf);
-		int nWantedLen = row*m_nCol*sizeof(long double);
-
-		if(nMemLen<nWantedLen)	//需要重新分配存储空间
-		{
-			long double * p = (long double*)malloc(nWantedLen);
-			if(p==NULL) return;	//存储空间不足，无法扩展矩阵
-			
-			//成功分配空间
-			memcpy(p,m_pBuf,m_nRow*m_nCol*sizeof(long double));
-			free(m_pBuf);
-			m_pBuf = p;
-		}
-		
-		memset(m_pBuf+m_nRow*m_nCol,0,(row-m_nRow)*m_nCol);
-
-		m_nRow = row;
-	}
-
-	else	// if(row<=m_nRow)	//缩减矩阵
-	{
-		m_nRow = row; 
-	}
+	if(this==&m) return TRUE;
+	else if(GetRow()!=m.GetRow()||GetCol()!=m.GetCol()) return FALSE;
+	LMatrix m1 = *this-m;
+	for(int i=1;i<=m1.GetRow();i++)
+		for(int j=1;j<=m1.GetCol();j++)
+			if(!IsZero(m1(i,j))) return false;
+	return true;
 }
 
-
-void LMatrix::SetCol(int col)
+bool LMatrix::operator!=(LMatrix& m)
 {
-	if(col<0) return;
-
-	else if(col<m_nCol)	//列数减小，数据需要向前移动
-	{
-		for (int i=1;i<m_nRow;i++)	//从第二行开始每行前移
-		{
-			memmove(m_pBuf+i*col,m_pBuf+i*m_nCol,col*sizeof(long double));			
-		}
-		m_nCol = col;
-	}
-
-	else if(col>m_nCol)	//列数增加，数据需要向后移动，还需要重新分配空间
-	{
-		int nMemLen = m_pBuf==NULL?0:_msize(m_pBuf);
-		int nWantedLen = m_nRow*col*sizeof(long double);
-
-		if(nMemLen<nWantedLen)	//需要重新分配存储空间
-		{
-			long double * p = (long double*)malloc(nWantedLen);
-			if(p==NULL) return;	//存储空间不足，无法扩展矩阵
-			
-			//成功分配空间，首先将数据搬到新位置
-			memcpy(p,m_pBuf,m_nRow*m_nCol*sizeof(long double));
-			free(m_pBuf);
-			m_pBuf = p;			
-		}
-		
-		//从最后一行开始每行后移
-		for (int i=m_nRow-1;i>=0;i--)
-		{
-			memmove(m_pBuf+i*col,m_pBuf+i*m_nCol,m_nCol*sizeof(long double));			
-		}
-
-		//将新增元素的值置为0
-		for (i=0;i<m_nRow;i++)
-		{
-			memset(m_pBuf+i*m_nCol,0,(col-m_nCol)*sizeof(long double));
-		}
-
-		m_nCol = col;
-	}
-
-	else //if(col==m_nCol)
-	{
-	}
+	return !(*this==m);
 }
 
-void LMatrix::SetValue(int row,int col,long double v)
+//	======================
+//	Name	:	operator +=
+//	Func	:	add another matrix to this one
+//	m		:	another matrix
+//	return	:	reference of this matrix
+//	note	:	if two matrices have different sizes, the return value is matrix with 0 row and 0 col
+LMatrix& LMatrix::operator +=(LMatrix& m)
 {
-	m_pBuf[(row-1)*m_nCol+col-1] = v;
-}
-
-void LMatrix::SetZero(long double z)
-{
-	m_fZero = z;
-}
-
-
-//==================================================================================================================================
-//
-//	行列操作
-//
-//==================================================================================================================================
-
-//	========================================
-//	函数名称	:	DelRows
-//	函数功能	:	删除矩阵中的若干行
-//	nStartRow	:	需要删除的起始行，从1开始
-//	nRows		:	需要删除的行数，nRows==-1表示删除后续所有行
-//	返回值		:	删除的行数
-int LMatrix::DelRows(int nStartRow,int nRows)
-{
-	if(nStartRow>m_nRow||m_nRow==0 ) return 0;
-	else if(nStartRow<=0) nStartRow=1;
-
-	if(nRows<0) nRows=m_nRow-nStartRow+1;
-	else if(nRows>m_nRow-nStartRow+1) nRows=m_nRow-nStartRow+1;
-	
-	//数据搬家
-	memmove(m_pBuf+(nStartRow-1)*m_nCol,m_pBuf+(nStartRow-1+nRows)*m_nCol,(m_nRow+1-nStartRow-nRows)*m_nCol*sizeof(long double));
-
-	//多余的空间清零
-	memset(m_pBuf+(m_nRow-nRows)*m_nCol,0,nRows*m_nCol*sizeof(long double));
-
-	m_nRow -= nRows;
-
-	return nRows;
-}
-
-int LMatrix::DelCols(int nStartCol,int nCols)
-{
-	if(nStartCol>m_nCol||m_nCol==0) return 0;
-	else if(nStartCol<=0) nStartCol=1;
-
-	if(nCols>m_nCol-nStartCol+1) nCols=m_nCol-nStartCol+1;
-
-	//每一行删除列数之后的数据前移
-	for(int i=0;i<m_nRow;i++)
-	{
-		memmove(m_pBuf+i*m_nCol+nStartCol+nCols-1,m_pBuf+i*m_nCol+nStartCol-1,(m_nCol-nStartCol-nCols+1)*sizeof(long double));
-	}
-
-	SetCol(m_nCol-nCols);
-
-	return nCols;
-}
-
-int LMatrix::DelRow(int nRow)
-{
-	return DelRows(nRow,1);
-}
-
-
-int LMatrix::DelCol(int nCol)
-{
-	return DelCols(nCol,1);
-}
-
-//	=============================================
-//	函数名称	:	InsertRows
-//	函数功能	:	插入若干行
-//	nPos		:	插入到第nPos行之前，nPos==1表示插入到第一行之前，nPos<=0表示插入到末尾
-//					
-LMatrix& LMatrix::InsertRows(LMatrix &m1,int nPos)
-{
-	if (nPos<=0||nPos>m_nRow) nPos=m_nRow+1; 
-
-	LMatrix m(m1);
-	m.SetCol(this->GetCol());
-
-	//1)首先扩充矩阵的行数
-	SetRow(GetRow()+m.GetRow());
-
-	//2)数据搬家
-	memmove(this->GetRowAddr(nPos+m.GetRow()),this->GetRowAddr(nPos),(m_nRow-m.GetRow()-nPos+1)*m_nCol*sizeof(long double));
-	memmove(this->GetRowAddr(nPos),m.GetBuf(),m.GetRow()*m.GetCol()*sizeof(long double));
-
+	// if two matrices have different size, result an empty matrix means "can not add"
+	if (m.GetRow()!=m_nRow||m.GetCol()!=m_nCol)  m_nRow=m_nCol=0;
+	else for(int i=1;i<=m_nRow;i++)  for(int j=1;j<=m_nCol;j++)  (*this)(i,j) += m(i,j);
 	return *this;
 }
 
-//	=============================================
-//	函数名称	:	InsertCols
-//	函数功能	:	向当前矩阵中插入若干列数据
-//	nPos		:	插入到第nPos列之前，nPos=1表示插入到第一列之前
-//					nPos<=0或nPos>m_nCol表示插入到最后一列
-LMatrix& LMatrix::InsertCols(LMatrix &m1,int nPos)
+//	======================
+//	Name		:	operator -=
+//	Func		:	subtract  another matrix from this one
+//	m			:	another matrix
+//	return		:	reference of this matrix
+//	note		:	if two matrices have different sizes, the return value is matrix with 0 row and 0 col
+LMatrix& LMatrix::operator -=(LMatrix& m)
 {
-	if (nPos<=0||nPos>m_nCol) nPos=m_nCol+1; 
+	// if two matrices have different size, result an empty matrix means "can not subtract"
+	if (m.GetRow()!=m_nRow||m.GetCol()!=m_nCol)  m_nRow=m_nCol=0;
+	else for(int i=1;i<=m_nRow;i++) for(int j=1;j<=m_nCol;j++)  (*this)(i,j) -= m(i,j);
+	return *this;
+}
 
-	LMatrix m(m1);
-	m.SetRow(this->GetRow());
+//	======================
+//	Name	:	operator *=
+//	Func		:	multiplied by another matrix
+//	m1		:	another matrix
+//	return	:	reference of this matrix
+//	note		:	if two matrices are not satisfy the condition of matrix multiply, then return matrix with 0 row and 0 col
+//	
+LMatrix& LMatrix::operator *=(LMatrix& m)
+{
+	long double s;
 
-	//1)首先扩充矩阵的列数
-	SetCol(GetCol()+m.GetCol());
+	if (m.GetRow()!=m_nCol)  m_nRow=m_nCol=0;
+	else 
+	{
+		LMatrix m1=*this;
+		LMatrix m2=m;
+		this->SetCol(m.GetCol());
 
-	//2)数据搬家
+		for(int i=1;i<=m_nRow;i++) 
+		{
+			for(int j=1;j<=m_nCol;j++)  
+			{
+				s=0;
+				for(int k=1;k<=m1.GetCol();k++)
+				{
+					s +=m1(i,k) * m2(k,j);
+				}
+				(*this)(i,j)=s;
+			}
+		}
+	}
+	return *this;
+}
+
+//	======================
+//	Name	:	operator /=
+//	Func		:	multiplied by the inverse of another matrix
+//	m			:	another matrix
+//	return	:	reference of this matrix
+//	note		:	if m is not inversable, or two matrices are not satisfy the condition of matrix multiply, then return matrix with 0 row and 0 col	
+LMatrix& LMatrix::operator /=(LMatrix& m)
+{
+	LMatrix m1 = m^(-1);		// devide m ==> multiply inverse of m
+	if(m1.GetRow()==0||m1.GetCol()==0) 	m_nRow=m_nCol=0;	//m is not inversable
+
+	(*this)*=m1;
+	return *this;
+}
+
+//	======================
+//	Name	:	operator *=
+//	Func		:	multiply the matrix with a number
+//	f			:	multiplier
+//	return	:	reference of this matrix
+LMatrix& LMatrix::operator *=(long double f)
+{
 	for(int i=1;i<=m_nRow;i++)
+		for(int j=1;j<=m_nCol;j++)
+			(*this)(i,j)*=f;
+	return *this;
+}
+
+//	======================
+//	Name	:	operator /=
+//	Func		:	divide the matrix with a number
+//	f			:	divisor
+//	return	:	reference of this matrix
+//	note		:	if f equal 0, return matrix with 0 row and 0 col
+LMatrix& LMatrix::operator /=(long double f)
+{
+	if(IsZero(f)) m_nRow=m_nCol=0;
+	else
 	{
-		memmove(GetRowAddr(i)+nPos-1+m.GetCol(),GetRowAddr(i)+nPos-1,(m_nCol-nPos-m.GetCol()+1)*sizeof(long double));
-		memmove(GetRowAddr(i)+nPos-1,m.GetRowAddr(i),m.GetCol()*sizeof(long double));
+		for(int i=1;i<=m_nRow;i++)
+			for(int j=1;j<=m_nCol;j++)
+				(*this)(i,j)/=f;
 	}
 	return *this;
 }
 
-LMatrix LMatrix::Sub(int sr,int sc,int er,int ec)
+//	======================
+//	Name	:	operator ^=
+//	Func	:	power of the matrix
+//	i		:	exponent
+//	return	:	reference of this matrix
+//	note	:	if i < 0, means power of inverse matrix
+LMatrix& LMatrix::operator ^=(int i)
 {
-	int r,c;
+	int j,k;
 
-	//首先确保起止行列数 合法
-	if(er<sr) { r=er; er=sr; sr=r; }
-	if(ec<sc) { c=ec; ec=sc; sc=c; }
-
-	if (sr<=0) sr=1;
-	if (sc<=0) sc=1;
-
-	if (er>m_nRow) er=m_nRow;
-	if (ec>m_nCol) ec=m_nCol;
-
-	//生成符合子矩阵尺寸的新矩阵
-	r = er-sr+1;
-	c = ec-sc+1;
-	LMatrix m(r,c);
-
-	//数据搬家
-	for (int i=0;i<m.GetRow();i++)
+	if(i==0)		//identity matrix
 	{
-		memcpy(m.GetBuf()+i*m.GetCol(),m_pBuf+(sr+i-1)*m_nCol+sc-1,c*sizeof(long double));
+		if(m_nRow!=m_nCol||m_nRow==0||m_nCol==0) m_nRow=m_nCol=0;
+		else
+		{
+			*this=LMatrixStorage::I(m_nRow);
+
+		}
+		return *this;
 	}
+	else if(i<-1)	//power of inverse matrix
+	{
+		i=0-i;
+		(*this)^=-1;
+		(*this)^=i;
+		return *this;
+	}
+	else if(i==-1)	// inverse matrix
+	{
+		//only square matrix is inversable
+		if( m_nRow!=m_nCol) m_nRow=m_nCol=0;
 
-	return m;
+		//append an "identity matrix" after the last col of matrix
+		LMatrix m = *this;
+		m.InsertCols(I(m_nRow),m_nRow+1);
+
+
+		//change to triangle matrix
+		for(i=1;i<=m.GetRow();i++)
+		{
+			//if [i,i]==0, there has at least one row " j " whose element of column " i "  is not zero in the following rows, otherwise the  determinant  is zero.
+			//add row j to row i, then [i,i]=[j,i] is not zero
+			if(IsZero(m(i,i)))
+			{
+				for(j=i+1;j<=m.GetRow();j++)
+				{
+					if(!IsZero(m(j,i))) 
+					{
+						for (k=i;k<=m.GetCol();k++)
+						{
+							m(i,k) += m(j,k);
+						}
+						break;
+					}
+				}
+				if(j>m.GetRow())	//[i,i]==0, and elements of column " i " of all the following rows are zero
+				{							
+					m_nRow=m_nCol=0;	//an invalid matrix, means "can not inversable"
+				}
+			}
+
+			//change to triangle matrix
+			for(j=i+1;j<=m_nRow;j++)
+			{
+				if(!IsZero(m(j,i)))	//
+				{
+					long double r = m(j,i)/m(i,i);
+					for (k=i+1;k<=m.GetCol();k++)
+					{
+						m(j,k) -= m(i,k)*r;
+					}
+					m(j,i)=0;
+
+				}
+
+			}
+		}
+
+		//change to diagonal matrix
+		for (i=m.GetRow();i>=1;i--)
+		{
+			for (j=i-1;j>=1;j--)
+			{
+				if( !IsZero(m(j,i)))	//
+				{
+					long double r = m(j,i)/m(i,i);
+					for (k=i+1;k<=m.GetCol();k++)
+					{
+						m(j,k) -= m(i,k)*r;
+					}
+					m(j,i)=0;
+				}
+
+			}
+		}
+
+		for (i=1;i<=m.GetRow();i++)
+		{
+			for (j=m.GetRow()+1;j<=m.GetCol();j++)
+			{
+				m(i,j) /= m(i,i);
+			}
+
+		}
+
+		*this = m.Cols(m.GetRow()+1,m.GetRow());
+
+		return *this;	
+	}
+	else if(i>0) 
+	{
+		LMatrix m = *this;
+		LMatrix res = I(GetRow());
+		while(i)
+		{
+			if(i&1) res *= m;
+			i>>=1;
+			m *= m;
+		}
+		*this=res;
+		return *this;
+	}
+	return *this;
 }
-
-LMatrix LMatrix::Rows(int nStartRow,int nRows)	//取矩阵的nStartRow行开始的nRows行
-{
-	return Sub(nStartRow,1,nStartRow+nRows-1,m_nCol);
-}
-LMatrix LMatrix::Cols(int nStartCol,int nCols)	//取矩阵的nStartCol列开始的nCols列
-{
-	return Sub(1,nStartCol,nStartCol+nCols-1,m_nRow);
-}
-
-LMatrix LMatrix::Row(int row) {	return Sub(row,1,row,m_nCol); }
-LMatrix LMatrix::Col(int col) { return Sub(1,col,m_nRow,col); }
-
-
-//==================================================================================================================================
-//
-//	运算符重载
-//
-//==================================================================================================================================
 
 LMatrix LMatrix::operator +(LMatrix &m)
 {
-	LMatrix r;
-	if(m.GetRow()!=m_nRow||m.GetCol()!=m_nCol) return r;
-	
-	r = *this;
-
-	for (int i=1;i<=m_nRow;i++)
-		for (int j=1;j<=m_nCol;j++)
-			r(i,j) = GetValue(i,j)+m(i,j);
-
+	LMatrix r = *this;
+	r+=m;
 	return r;
 }
 
 
 LMatrix LMatrix::operator -(LMatrix &m)
 {
-	LMatrix r;
-	if(m.GetRow()!=m_nRow||m.GetCol()!=m_nCol) return r;
-	
-	r = *this;
-
-	for (int i=1;i<=m_nRow;i++)
-		for (int j=1;j<=m_nCol;j++)
-			r(i,j) = GetValue(i,j)-m(i,j);
-
+	LMatrix r = *this;
+	r-=m;
 	return r;
 }
-
 
 
 LMatrix LMatrix::operator *(LMatrix &m)
 {
-	LMatrix r;
-	if(m.GetRow()!=m_nCol) return r;
-	
-	r = *this;
-	r.SetCol(m.GetCol());
-
-	for (int i=1;i<=r.GetRow();i++)
-		for (int j=1;j<=r.GetCol();j++)
-		{
-			long double s = 0.0;
-			for (int k=1;k<=GetCol();k++)
-			{
-				s += GetValue(i,k)*m(k,j);
-			}
-			r(i,j) = s;
-		}
-
-	return r;
-}
-LMatrix LMatrix::operator +(long double f)
-{
-	int i,j;
 	LMatrix r = *this;
-	int nRow = GetRow();
-	int nCol = GetCol();
-
-	for (i=1;i<=nRow;i++)
-		for(j=1;j<=nCol;j++)
-			r(i,j)=GetValue(i,j)+f;
+	r*=m;
 	return r;
 }
-LMatrix LMatrix::operator -(long double f)
+	   
+LMatrix LMatrix::operator /(LMatrix& m)
 {
-	int i,j;
-	LMatrix r = *this;
-	int nRow = GetRow();
-	int nCol = GetCol();
-
-	for (i=1;i<=nRow;i++)
-		for(j=1;j<=nCol;j++)
-			r(i,j)=GetValue(i,j)-f;
+	LMatrix r=*this;
+	r/=m;
 	return r;
 }
+
 LMatrix LMatrix::operator *(long double f)
 {
-	int i,j;
 	LMatrix r = *this;
-	int nRow = GetRow();
-	int nCol = GetCol();
-
-	for (i=1;i<=nRow;i++)
-		for(j=1;j<=nCol;j++)
-			r(i,j)=GetValue(i,j)*f;
+	r*=f;
 	return r;
 }
 
 LMatrix LMatrix::operator /(long double f)
 {
-	int i,j;
 	LMatrix r = *this;
-	int nRow = GetRow();
-	int nCol = GetCol();
-
-	for (i=1;i<=nRow;i++)
-		for(j=1;j<=nCol;j++)
-			r(i,j)=GetValue(i,j)/f;
+	r/=f;
 	return r;
 }
 
-long double& LMatrix::operator ()(int row,int col)
+LMatrix LMatrix::operator^(int i)
 {
-	return m_pBuf[(row-1)*m_nCol+col-1];
+	LMatrix r=*this;
+	r^=i;
+	return r;
 }
-long double LMatrix::operator ()(int row,int col) const
-{
-	return m_pBuf[(row-1)*m_nCol+col-1];
-}
-
 
 //==================================================================================================================================
 //
-//	矩阵运算
+//	matrix operation
 //
 //==================================================================================================================================
-int LMatrix::Inv()
-{
-	int i,j,k;
-	//不是方阵或行列式等于0，则不可逆
-	long double fDet = Det();
-	if( m_nRow!=m_nCol || fDet==0 || fabs(fDet)<=m_fZero ) return 0;
 
-	//单位阵
-	LMatrix m = I(m_nRow);
-
-	//变化为三角阵
-	for(i=1;i<=m_nRow-1;i++)
-	{
-		//如果元素[i,i]==0，则后续各行i列中 必然有一个不为0的，否则行列式==0
-		//此时将该行加到第i行上
-		if(fabs(GetValue(i,i))<=m_fZero)
-		{
-			for(j=i+1;j<=m_nRow;j++)
-			{
-				if(fabs(GetValue(j,i))>m_fZero) 
-				{
-					for (k=1;k<=m_nRow;k++)
-					{
-						SetValue(i,k,GetValue(j,k)+GetValue(i,k));
-						m(i,k) = m(j,k)+m(i,k);
-					}
-					break;
-				}
-			}
-		}
-
-		//变为三角阵
-		for(j=i+1;j<=m_nRow;j++)
-		{
-			if( fabs(GetValue(j,i))>m_fZero )	//GetValue(j,i)!=0
-			{
-				long double r = GetValue(j,i)/GetValue(i,i);
-				for (k=i+1;k<=m_nCol;k++)
-				{
-					SetValue(j,k,GetValue(j,k)-GetValue(i,k)*r);
-				}
-				SetValue(j,i,0);
-				for (k=1;k<=m_nCol;k++)
-				{
-					m(j,k) = m(j,k)-m(i,k)*r;
-				}
-			}
-		}
-	}
-
-	//变为对角阵
-	for (i=m_nRow;i>1;i--)
-	{
-		for (j=i-1;j>=1;j--)
-		{
-			if( fabs(GetValue(j,i))>m_fZero )	//GetValue(j,i)!=0
-			{
-				long double r = GetValue(j,i)/GetValue(i,i);
-				for (k=1;k<=m_nCol;k++)
-				{
-//					SetValue(j,k,GetValue(j,k)*r-GetValue(i,k));
-					m(j,k) =m(j,k)-m(i,k)*r;
-				}
-//				SetValue(j,i,0);
-			}
-		}
-	}
-
-	for (i=1;i<=m.GetRow();i++)
-	{
-		for (j=1;j<=m.GetCol();j++)
-		{
-			m(i,j) = m(i,j)/GetValue(i,i);
-		}
-	}
-
-	*this = m;	
-
-	return 1;
-}
-
-int LMatrix::Trans()
+LMatrix LMatrix::Trans()
 {
 	LMatrix m(m_nCol,m_nRow);
 	for (int i=1;i<=m_nRow;i++)
 		for (int j=1;j<=m_nCol;j++)
-			m(j,i)=GetValue(i,j);
-	*this = m;
-	return 0;
+			m(j,i)=(*this)(i,j);
+	return m;
 }
 
-long double LMatrix::Det()
+long double LMatrix::Deter()
 {
 	int i,k,j;
 	LMatrix m = *this;
-	
+
 	for(i=1;i<=m_nRow-1;i++)
 	{
-		//如果元素[i,i]==0，则后续各行i列中 必然有一个不为0的，否则行列式==0
-		//此时将该行加到第i行上
-		if(fabs(m.GetValue(i,i))<=m_fZero)
+		//if [i,i]==0, there has at least one row " j " whose element of column " i "  is not zero in the following rows, otherwise the  determinant  is zero.
+		//add row j to row i, then [i,i]=[j,i] is not zero
+		if(IsZero(m(i,i)))
 		{
 			for(j=i+1;j<=m_nRow;j++)
 			{
-				if(fabs(m(j,i))>m_fZero) 
+				if(!IsZero(m(j,i))) 
 				{
 					for (k=1;k<=m_nRow;k++)
 					{
-						m(i,k)=m(j,k)+m(i,k);
+						m(i,k)+=m(j,k);
 					}
 					break;
 				}
 			}
 		}
 		
+
 		for(j=i+1;j<=m_nRow;j++)
 		{
-			if(fabs(m(j,i))>m_fZero)
+			if(!IsZero(m(j,i)))
 			{
 				long double r = m(j,i)/m(i,i);
 				for (k=i+1;k<=m_nCol;k++)
 				{
-					m(j,k)=m(j,k)-m(i,k)*r;
+					m(j,k)-=m(i,k)*r;
 				}
+				m(j,i)=0;
 			}
+
+
 		}
+
 	}
 
 	long double s = 1;
@@ -617,7 +412,7 @@ LMatrix LMatrix::Cholesky()
 		//1)计算tii
 		s=0;
 		for(k=1;k<i;k++) s+=t(i,k)*t(i,k);
-		t(i,i) = sqrt(GetValue(i,i)-s);
+		t(i,i) = sqrt((*this)(i,i)-s);
 
 		//2)计算tji
 		for(j=i+1;j<=m_nRow;j++)
@@ -628,7 +423,7 @@ LMatrix LMatrix::Cholesky()
 			{
 				s+= t(i,k)*t(j,k);
 			}
-			t(j,i)=(GetValue(i,j)-s)/t(i,i);
+			t(j,i)=((*this)(i,j)-s)/t(i,i);
 		}
 	}
 
@@ -637,12 +432,9 @@ LMatrix LMatrix::Cholesky()
 		for (j=i+1;j<=m_nRow;j++)
 			t(i,j) =0.0;
 
-//	LStringA s2 = "刚刚计算得出的cholesky矩阵为t=：\r\n";
-//	s2.SaveFile("c:\\simu.txt");
-//	t.Output("c:\\simu.txt",8);
 	return t;
 }
-
+/*
 bool LMatrix::IsPDefinite()
 {
 	for (int i=1;i<=m_nRow;i++)
@@ -1019,3 +811,4 @@ void LMatrix::Load(char * szFileName)				//从szFileName中读取矩阵的各个元素
 	}
 
 }
+*/
