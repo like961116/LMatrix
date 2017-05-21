@@ -362,7 +362,7 @@ void Test_LMatrix_Deter()
 		szText.Format(_T("%8.0f\r\n\r\n"),m.Deter());
 		m.DBG(file,szText);
 	}
-	
+
 }
 
 void Test_LMatrix_Transposition()
@@ -461,4 +461,102 @@ void Test_LMatrix_Cholesky()
 		Loop++;
 
 	}
+}
+
+void Test_LMatrix_Clear()
+{
+	CFile file;
+	file.Open(_T("c:\\Test_LMatrix_Clear.txt"),CFile::modeCreate|CFile::modeWrite);
+	CArchive ar(&file,CArchive::store);	char szFFFE[2];	szFFFE[0]='\xFF';	szFFFE[1]='\xFE';	ar.Write(szFFFE,2);	ar.Close();
+
+	CString szText,szText1,szText2,szText3;
+
+	LMatrix m(5,6);
+
+	int Loop=1;
+	for(int i=-2;i<6;i++)
+	{
+		m.InitTestValue();
+
+		szText.Format(_T("\r\n\r\n========== Loop %d ==========\r\n\r\nm=\r\n\r\n"),Loop);
+		m.DBG(file,szText);
+		m.Save(file,8,0);
+
+		szText.Format(_T("\r\n\r\n==========m.Clear(%d,2)==========\r\n\r\n"),i);
+		m.DBG(file,szText);
+		m.Clear(i,2);
+		m.Save(file,8,0);
+
+		Loop++;
+
+	}
+
+	file.Close();
+}
+
+void Test_LMatrix_Row_Transform_To_Upper_Triangle()
+{
+	CFile file;
+	file.Open(_T("c:\\Test_LMatrix_Row_Transform_To_Upper_Triangle.txt"),CFile::modeCreate|CFile::modeWrite);
+	CArchive ar(&file,CArchive::store);	char szFFFE[2];	szFFFE[0]='\xFF';	szFFFE[1]='\xFE';	ar.Write(szFFFE,2);	ar.Close();
+
+	LMatrix m1(3,5);
+	for(int i=1;i<=3;i++)
+		for(int j=1;j<=5;j++)
+			m1(i,j)=rand()*10.0/RAND_MAX;
+
+
+	LMatrix m2=m1.Trans();
+
+	CString szText;
+	szText.Format(_T("\r\n\r\n========== m1: ==========\r\n\r\n"));
+	m1.DBG(file,szText);
+	m1.Save(file,12,4);
+
+	szText.Format(_T("\r\n\r\n After Upper Triangle Transform, m1 is: \r\n\r\n"));
+	LMatrix m3=m1._Row_Transform_To_Upper_Triangle();
+	m3.DBG(file,szText);
+	m3.Save(file,12,4);
+
+	szText.Format(_T("\r\n\r\n========== m2: ==========\r\n\r\n"));
+	m2.DBG(file,szText);
+	m2.Save(file,12,4);
+
+	szText.Format(_T("\r\n\r\n After Upper Triangle Transform, m2 is: \r\n\r\n"));
+	LMatrix m4=m2._Row_Transform_To_Upper_Triangle();
+	m4.DBG(file,szText);
+	m4.Save(file,12,4);
+
+	int Loop=1;
+	for(int i=1;i<=5;i++)
+	{
+		LMatrix m(i,i);
+		for(int j=1;j<=i;j++)
+			for(int k=1;k<=i;k++)
+				m(j,k)=rand()*10.0/RAND_MAX;
+
+		szText.Format(_T("\r\n\r\n========== Loop %d ==========\r\n\r\nm=:\r\n\r\n"),Loop);
+		m.DBG(file,szText);
+		m.Save(file,12,4);
+
+		m.DBG(file,_T("\r\nAfter Transform, m=:\r\n\r\n"));
+		LMatrix m5=m._Row_Transform_To_Upper_Triangle();
+		m5.Save(file,12,4);
+
+		if(m.Deter()==m5.Deter()) 
+		{
+			szText.Format(_T("\r\n\r\nm.Deter=%12.4f,m5.Deter=%12.4f,success"),m.Deter(),m5.Deter());
+			m.DBG(file,szText);
+		}
+		else 
+		{
+			szText.Format(_T("\r\n\r\nm.Deter=%12.4f,m5.Deter=%12.4f,failed"),m.Deter(),m5.Deter());
+			m.DBG(file,_T("\r\n\r\nfailed\r\n\r\n"));
+		}
+
+		Loop++;
+	}
+	file.Close();
+
+	
 }

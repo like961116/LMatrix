@@ -180,13 +180,20 @@ public:
 	//	return	:	Lower Triangle Matrix T which satisfies equation M=T*T'
 	LMatrix Cholesky();	
 
+public:
+	//	========================
+	//	Name	:	_Row_Transform_To_Upper_Triangle
+	//	Func	:	Just as Name, this private function can be shared by several other functions, such as Determinant, Inverse...
+	LMatrix _Row_Transform_To_Upper_Triangle();
+
+public:
+/*	bool IsPositiveDefinite();		//判断矩阵是否是正定矩阵
+	bool IsHalfPositiveDefinite();	//判断矩阵是否是半正定矩阵
+	bool IsNegativeDefinite();		//判断矩阵是否是负定矩阵
+	bool IsHalfNegativeDefinite();	//判断矩阵是否是半负定矩阵
+*/
+
 /*
-	bool IsPositiveDefinite();			//判断矩阵是否是正定矩阵
-	bool IsHalfPositiveDefinite();		//判断矩阵是否是半正定矩阵
-//	bool IsNDefinite();	//判断矩阵是否是负定矩阵
-//	bool IsHNDefinite();	//判断矩阵是否是半负定矩阵
-
-
 //==================================================================================================================================
 //	数学运算、类型转换
 //==================================================================================================================================

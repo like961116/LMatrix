@@ -3,6 +3,7 @@
 #include <math.h>
 
 
+
 LMatrix::LMatrix() { m_nBase=1;m_fZero=0.0; }
 LMatrix::LMatrix(int row,int col) : LMatrixStorage(row,col) { m_nBase=1;m_fZero=0.0;  }
 LMatrix::LMatrix(LMatrix& m) : LMatrixStorage(m) { m_nBase=1;m_fZero=m.m_fZero; }
@@ -811,3 +812,60 @@ void LMatrix::Load(char * szFileName)				//从szFileName中读取矩阵的各个元素
 
 }
 */
+
+LMatrix LMatrix::_Row_Transform_To_Upper_Triangle()
+{
+
+	int i,k,j;
+	LMatrix m = *this;
+
+	int nRows = m.GetRow();
+	int nCols = m.GetCol();
+	
+	//	when the matrix have more rows than columns, after row transposition, the extra rows will be change to zero 
+	if(nRows>nCols) 
+	{
+		int nNum = nRows-nCols;
+		nRows=nCols;
+		m.Clear(nRows+1,nNum);
+	}
+	for (i=1;i<nRows;i++)
+	{
+		//if [i,i]==0, there has at least one row " j " whose element of column " i "  is not zero in the following rows, otherwise the  determinant  is zero.
+		//add row j to row i, then [i,i]=[j,i] is not zero
+		if(IsZero(m(i,i)))
+		{
+			for(j=i+1;j<=m_nRow;j++)
+			{
+				if(!IsZero(m(j,i))) 
+				{
+					for (k=1;k<=m_nRow;k++)
+					{
+						m(i,k)+=m(j,k);
+					}
+					break;
+				}
+			}
+		
+			if(j>m_nRow) continue;	//means element [i,j] (j=i,i+1,...m_nRow) are all zero
+		}	
+
+		//Now,[i,i]!=0, set [i,j](j=i+1,i+2...)=0
+		for(j=i+1;j<=nRows;j++)
+		{
+			if(!IsZero(m(j,i)))
+			{
+				long double r = m(j,i)/m(i,i);
+				for (k=i+1;k<=m_nCol;k++)
+				{
+					m(j,k)-=m(i,k)*r;
+				}
+				m(j,i)=0;
+			}
+
+		}
+
+	}
+
+	return m;
+}
