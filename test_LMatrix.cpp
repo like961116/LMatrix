@@ -188,13 +188,44 @@ void Test_LMatrix_Divide()
 
 	CString szText;
 	szText.Format(_T("Use equation m1*m2/m2==m1\r\n\r\n"));
+	LMatrix	m;
+	m.DBG(file,szText);
 
+	int Loop=1;
 	for(int i=1;i<5;i++)
 	{
-		LMatrix m(i,i);
 		LMatrix m1(i,i);
+		LMatrix m2(i,i);
+		
+		m1.SetZero(0.00000001);
+		m2.SetZero(0.00000001);
+
 		for(int j=1;j<=i;j++)
+		{
 			for(int k=1;k<=i;k++)
+			{
+				m1(j,k) = rand()*10.0/RAND_MAX;
+				m2(j,k)= rand()*10.0/RAND_MAX;
+			}
+		}
+
+		szText.Format(_T("\r\n\r\n\r\n========== Loop %d==========\r\n"),Loop);
+		m.DBG(file,szText);
+
+		m1.DBG(file,_T("\r\n\r\nm1=\r\n"));
+		m1.Save(file,8,4);
+
+		m2.DBG(file,_T("\r\n\r\nm2=\r\n"));
+		m2.Save(file,8,4);
+
+		LMatrix m3 = m1*m2/m2;
+		m3.DBG(file,_T("\r\n\r\nm1*m2/m2=\r\n"));
+		m3.Save(file,8,4);
+
+		if(m3==m1) m3.DBG(file,_T("\r\n\r\nSuccess\r\n\r\n"));
+		else m3.DBG(file,_T("\r\n\r\nFailed\r\n\r\n"));
+
+		Loop++;
 
 	}
 
@@ -332,4 +363,102 @@ void Test_LMatrix_Deter()
 		m.DBG(file,szText);
 	}
 	
+}
+
+void Test_LMatrix_Transposition()
+{
+	CFile file;
+	file.Open(_T("c:\\Test_LMatrix_Transposition.txt"),CFile::modeWrite|CFile::modeCreate);
+	CArchive ar(&file,CArchive::store);	char szFFFE[2];	szFFFE[0]='\xFF';	szFFFE[1]='\xFE';	ar.Write(szFFFE,2);	ar.Close();
+
+	CString szText;
+	szText.Format(_T("Use equation (m')'==m\r\n\r\n"));
+	LMatrix	m;
+	m.DBG(file,szText);
+
+	int Loop=1;
+	for(int i=1;i<5;i++)
+	{
+		LMatrix m1(i,5);
+		
+		m1.SetZero(0.00000001);
+
+		for(int j=1;j<=i;j++)
+		{
+			for(int k=1;k<=5;k++)
+			{
+				m1(j,k) = rand()*10.0/RAND_MAX;
+			}
+		}
+
+		szText.Format(_T("\r\n\r\n\r\n========== Loop %d==========\r\n"),Loop);
+		m.DBG(file,szText);
+		
+		m1.DBG(file,_T("\r\n\r\nm1=\r\n"));
+		m1.Save(file,8,4);
+		
+		LMatrix m2=m1.Trans();
+		m2.DBG(file,_T("\r\n\r\nm2=m1'=\r\n"));
+		m2.Save(file,8,4);
+
+		LMatrix m3 = m2.Trans();
+		m3.DBG(file,_T("\r\n\r\m3=m2'=(m1')'=\r\n"));
+		m3.Save(file,8,4);
+
+		if(m3==m1) m3.DBG(file,_T("\r\n\r\nSuccess\r\n\r\n"));
+		else m3.DBG(file,_T("\r\n\r\nFailed\r\n\r\n"));
+
+		Loop++;
+
+	}
+}
+
+void Test_LMatrix_Cholesky()
+{
+	CFile file;
+	file.Open(_T("c:\\Test_LMatrix_Cholesky.txt"),CFile::modeWrite|CFile::modeCreate);
+	CArchive ar(&file,CArchive::store);	char szFFFE[2];	szFFFE[0]='\xFF';	szFFFE[1]='\xFE';	ar.Write(szFFFE,2);	ar.Close();
+
+	CString szText;
+	szText.Format(_T("Use equation m==T*T'\r\n\r\n"));
+	LMatrix	m;
+	m.DBG(file,szText);
+
+	int Loop=1;
+	for(int i=1;i<5;i++)
+	{
+		LMatrix m1(i,i);
+		
+		m1.SetZero(0.00000001);
+
+		for(int j=1;j<=i;j++)
+		{
+			for(int k=1;k<=j;k++)
+			{
+				m1(j,k) = rand()*10.0/RAND_MAX;
+				m1(k,j) = m1(j,k);
+			}
+		}
+
+		szText.Format(_T("\r\n\r\n\r\n========== Loop %d==========\r\n"),Loop);
+		m.DBG(file,szText);
+
+		m1.DBG(file,_T("\r\n\r\nm1=\r\n"));
+		m1.Save(file,8,4);
+		
+		LMatrix m2=m1.Cholesky();
+		m2.DBG(file,_T("\r\n\r\nm2=m1.Cholesky()=\r\n"));
+		m2.Save(file,8,4);
+
+
+		LMatrix m3=m2*m2.Trans();
+		m3.DBG(file,_T("\r\n\r\nm3=m2*m2'=\r\n"));
+		m3.Save(file,8,4);
+
+		if(m3==m1) m3.DBG(file,_T("\r\n\r\nSuccess\r\n\r\n"));
+		else m3.DBG(file,_T("\r\n\r\nFailed\r\n\r\n"));
+
+		Loop++;
+
+	}
 }

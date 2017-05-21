@@ -395,11 +395,10 @@ long double LMatrix::Deter()
 	return s;
 }
 
-//	=========================
-//	函数名称	:	Cholesky
-//	函数功能	:	返回矩阵的Cholesky分解
-//	Cholesky分解:	C是实对称正定矩阵，则必然存在下三角矩阵T，使得C=TT'
-//					该函数返回的就是T
+//	=======================
+//	Name	:	Cholesky
+//	Func	:	Cholesky decomposition
+//	return	:	Lower Triangle Matrix T which satisfies equation M=T*T'
 LMatrix LMatrix::Cholesky()
 {
 	int i,j,k;
@@ -409,7 +408,7 @@ LMatrix LMatrix::Cholesky()
 
 	for (i=1;i<=m_nRow;i++)
 	{
-		//1)计算tii
+		//1)calculate tii
 		s=0;
 		for(k=1;k<i;k++) s+=t(i,k)*t(i,k);
 		t(i,i) = sqrt((*this)(i,i)-s);
@@ -427,7 +426,7 @@ LMatrix LMatrix::Cholesky()
 		}
 	}
 
-	//下面把上三角置为0
+	//set upper triangle to zero
 	for (i=1;i<=m_nRow;i++)
 		for (j=i+1;j<=m_nRow;j++)
 			t(i,j) =0.0;

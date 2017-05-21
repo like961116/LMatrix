@@ -163,19 +163,22 @@ public:
 public:
 	//	======================
 	//	Name	:	Trans
-	//	Func		:	transposition of matrix
+	//	Func	:	transposition of matrix
 	//	return	:	a new matrix  
 	LMatrix Trans();
 
 	//	======================
 	//	Name	:	Deter
-	//	Func		:	determinant of matrix
+	//	Func	:	determinant of matrix
 	//	return	:	determinant of matrix
 	long double Deter();	 	
 
 	
-	LMatrix Cholesky();	//得到Cholesky分解的下三角矩阵T，一般协方差矩阵C可以分解为TT'
-	
+	//	=======================
+	//	Name	:	Cholesky
+	//	Func	:	Cholesky decomposition
+	//	return	:	Lower Triangle Matrix T which satisfies equation M=T*T'
+	LMatrix Cholesky();	
 
 /*
 	bool IsPositiveDefinite();			//判断矩阵是否是正定矩阵
