@@ -388,6 +388,25 @@ LMatrixStorage LMatrixStorage::Cols(int nStartCol,int nCols)	//取矩阵的nStartCol
 LMatrixStorage LMatrixStorage::Row(int row) { return Rows(row,1); }
 LMatrixStorage LMatrixStorage::Col(int col) { return Cols(col,1); }
 
+int LMatrixStorage::Clear(int nRow,int nNum=1)
+{
+	if(nNum==0) return 0;
+
+	int nSRow,nERow;
+
+	nSRow=nRow;	nERow=nSRow+nNum;
+	if(nSRow>nERow) { nRow=nSRow;nSRow=nERow;nERow=nRow; }
+	if(nERow<=m_nBase) return 0;
+	if(nSRow>m_nRow+m_nBase-1) return 0;
+
+	long double * p = GetRowAddr(nSRow);
+	nNum = nERow-nSRow;
+	memset(p,0,sizeof(long double)*nNum*m_nCol);
+
+	return nNum;
+}
+
+
 //==================================================================================================================================
 //
 //	调试功能
