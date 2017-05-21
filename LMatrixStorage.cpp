@@ -399,6 +399,9 @@ int LMatrixStorage::Clear(int nRow,int nNum=1)
 	if(nERow<=m_nBase) return 0;
 	if(nSRow>m_nRow+m_nBase-1) return 0;
 
+	if(nSRow<m_nBase) nSRow=m_nBase;
+	if(nERow>m_nRow+m_nBase) nERow=m_nRow+m_nBase;
+
 	long double * p = GetRowAddr(nSRow);
 	nNum = nERow-nSRow;
 	memset(p,0,sizeof(long double)*nNum*m_nCol);
