@@ -184,14 +184,21 @@ public:
 	//	========================
 	//	Name	:	_Row_Transform_To_Upper_Triangle
 	//	Func	:	Just as Name, this private function can be shared by several other functions, such as Determinant, Inverse...
-	LMatrix _Row_Transform_To_Upper_Triangle();
+	LMatrix _Elementary_Row_Transform_To_Upper_Triangle();
 
 public:
-/*	bool IsPositiveDefinite();		//判断矩阵是否是正定矩阵
-	bool IsHalfPositiveDefinite();	//判断矩阵是否是半正定矩阵
+	//	=========================
+	//	Name	:	IsSymmetric
+	//	Func	:	Determine whether a matrix is symmetric
+	//	return	:	true for symmetric, false for nonsymmetric
+	bool IsSymmetric();				
+
+
+	bool IsPositiveDefinite();		//判断矩阵是否是正定矩阵
+//	bool IsHalfPositiveDefinite();	//判断矩阵是否是半正定矩阵
 	bool IsNegativeDefinite();		//判断矩阵是否是负定矩阵
-	bool IsHalfNegativeDefinite();	//判断矩阵是否是半负定矩阵
-*/
+//	bool IsHalfNegativeDefinite();	//判断矩阵是否是半负定矩阵
+/**/
 
 /*
 //==================================================================================================================================

@@ -514,7 +514,7 @@ void Test_LMatrix_Row_Transform_To_Upper_Triangle()
 	m1.Save(file,12,4);
 
 	szText.Format(_T("\r\n\r\n After Upper Triangle Transform, m1 is: \r\n\r\n"));
-	LMatrix m3=m1._Row_Transform_To_Upper_Triangle();
+	LMatrix m3=m1._Elementary_Row_Transform_To_Upper_Triangle();
 	m3.DBG(file,szText);
 	m3.Save(file,12,4);
 
@@ -523,7 +523,7 @@ void Test_LMatrix_Row_Transform_To_Upper_Triangle()
 	m2.Save(file,12,4);
 
 	szText.Format(_T("\r\n\r\n After Upper Triangle Transform, m2 is: \r\n\r\n"));
-	LMatrix m4=m2._Row_Transform_To_Upper_Triangle();
+	LMatrix m4=m2._Elementary_Row_Transform_To_Upper_Triangle();
 	m4.DBG(file,szText);
 	m4.Save(file,12,4);
 
@@ -540,7 +540,7 @@ void Test_LMatrix_Row_Transform_To_Upper_Triangle()
 		m.Save(file,12,4);
 
 		m.DBG(file,_T("\r\nAfter Transform, m=:\r\n\r\n"));
-		LMatrix m5=m._Row_Transform_To_Upper_Triangle();
+		LMatrix m5=m._Elementary_Row_Transform_To_Upper_Triangle();
 		m5.Save(file,12,4);
 
 		if(m.Deter()==m5.Deter()) 
@@ -559,4 +559,61 @@ void Test_LMatrix_Row_Transform_To_Upper_Triangle()
 	file.Close();
 
 	
+}
+
+void Test_LMatrix_IsPositiveDefinite()
+{
+	CFile file;
+	file.Open(_T("c:\\Test_LMatrix_IsPositiveDefinite.txt"),CFile::modeCreate|CFile::modeWrite);
+	CArchive ar(&file,CArchive::store);	char szFFFE[2];	szFFFE[0]='\xFF';	szFFFE[1]='\xFE';	ar.Write(szFFFE,2);	ar.Close();
+	srand(time(NULL));
+	LMatrix m1(3,3);
+	m1(1,1)=-7;
+	m1(1,2)=m1(2,1)=-13;
+	m1(2,2)=14;
+	m1(1,3)=m1(3,1)=-1;
+	m1(2,3)=m1(3,2)=-3;
+	m1(3,3)=-4;
+
+	bool b=m1.IsNegativeDefinite();
+
+	for(int i=1;i<5;i++)
+	{
+		LMatrix m(i,i);
+		for(int j=1;j<=i;j++)
+		{
+			for(int k=1;k<=j;k++)
+			{
+				m(j,k)=rand()*20/RAND_MAX;
+				if(rand()*1.0/RAND_MAX>0.5) m(j,k)=0-m(j,k);
+				m(k,j)=m(j,k);
+
+			}
+		}
+		
+		m.DBG(file,_T("\r\n\r\n=================================\r\n\r\n"));
+		m.Save(file,6,0);
+		if(m.IsPositiveDefinite()) m.DBG(file,_T("\r\n\r\nPositive Definite\r\n\r\n"));
+		if(m.IsNegativeDefinite()) m.DBG(file,_T("\r\n\r\nNegative Definite\r\n\r\n"));
+
+		for(int j=1;j<=i;j++)
+		{
+			for(int k=1;k<=j;k++)
+			{
+				m(j,k)=0-m(j,k);
+				m(k,j)=m(j,k);
+			}
+		}
+		m.DBG(file,_T("\r\n\r\n=================================\r\n\r\n"));
+		m.Save(file,6,0);
+		if(m.IsPositiveDefinite()) m.DBG(file,_T("\r\n\r\nPositive Definite\r\n\r\n"));
+		if(m.IsNegativeDefinite()) m.DBG(file,_T("\r\n\r\nNegative Definite\r\n\r\n"));
+
+
+	}
+}
+
+void Test_LMatrix_IsNegativeDefinite()
+{
+
 }

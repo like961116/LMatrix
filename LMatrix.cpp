@@ -813,7 +813,7 @@ void LMatrix::Load(char * szFileName)				//从szFileName中读取矩阵的各个元素
 }
 */
 
-LMatrix LMatrix::_Row_Transform_To_Upper_Triangle()
+LMatrix LMatrix::_Elementary_Row_Transform_To_Upper_Triangle()
 {
 
 	int i,k,j;
@@ -869,3 +869,102 @@ LMatrix LMatrix::_Row_Transform_To_Upper_Triangle()
 
 	return m;
 }
+
+
+
+bool LMatrix::IsSymmetric()
+{
+	if (m_nRow!=m_nCol) return false;
+	for(int i=2;i<=m_nRow;i++)
+	{
+		for(int j=1;j<i;j++)
+		{
+			if(!IsZero((*this)(i,j)-(*this)(j,i)))
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+bool LMatrix::IsPositiveDefinite()
+{
+	if(!IsSymmetric()) return false;
+
+	int i,k,j;
+	LMatrix m = *this;
+
+	for (i=1;i<=m.GetRow();i++)
+	{
+		//if [i,i]==0, the matrix is not positive definite
+		if(m(i,i)<=0||IsZero(m(i,i))) return false;
+		
+		//Now,[i,i]>0, set [i,j](j=i+1,i+2...)=0
+		for(j=i+1;j<=m.GetRow();j++)
+		{
+			if(!IsZero(m(j,i)))
+			{
+				long double r = m(j,i)/m(i,i);
+				for (k=i+1;k<=m_nCol;k++)
+				{
+					m(j,k)-=m(i,k)*r;
+				}
+				m(j,i)=0;
+			}
+
+		}
+
+	}
+
+	return true;
+}
+
+bool LMatrix::IsNegativeDefinite()
+{
+	LMatrix m = *this;
+	
+	for(int i=1;i<=m_nRow;i++)
+		for(int j=1;j<=m_nCol;j++)
+			m(i,j) = 0-m(i,j);
+
+	if(m.IsPositiveDefinite()) return true;
+	else return false;
+
+	//if(!IsSymmetric()) return false;
+
+	//int i,k,j;
+	//LMatrix m = *this;
+
+	//for (i=1;i<=m.GetRow();i++)
+	//{
+	//	//if [i,i]==0, the matrix is not positive definite
+	//	if(i%2==0)
+	//	{
+	//		if(m(i,i)<=0||IsZero(m(i,i))) return false;
+	//	}
+	//	else
+	//	{
+	//		if(m(i,i)>=0||IsZero(m(i,i))) return false;
+	//	}
+
+	//	//Now,[i,i]!=0, set [i,j](j=i+1,i+2...)=0
+	//	for(j=i+1;j<=m.GetRow();j++)
+	//	{
+	//		if(!IsZero(m(j,i)))
+	//		{
+	//			long double r = m(j,i)/m(i,i);
+	//			for (k=i+1;k<=m_nCol;k++)
+	//			{
+	//				m(j,k)-=m(i,k)*r;
+	//			}
+	//			m(j,i)=0;
+	//		}
+
+	//	}
+
+	//}
+
+	//return true;
+}
+

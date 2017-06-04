@@ -9,3 +9,7 @@ void Test_LMatrix_Inverse();
 void Test_LMatrix_Deter();
 void Test_LMatrix_Cholesky();
 void Test_LMatrix_Transposition();
+void Test_LMatrix_Clear();
+void Test_LMatrix_Row_Transform_To_Upper_Triangle();
+void Test_LMatrix_IsPositiveDefinite();
+void Test_LMatrix_IsNegativeDefinite();
